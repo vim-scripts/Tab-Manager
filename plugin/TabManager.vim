@@ -1,6 +1,6 @@
 " TabManager.vim: a plugin to rearrange open buffers across multiple tabs in Vim.
 " By: Salman Halim
-" Version 1.0
+" Version 1.1
 " Date: Saturday, April 02, 2011
 "
 " Sorts and rearranges all open buffers across tabs based on built-in or user-specified criteria.
@@ -18,6 +18,18 @@
 " /progs/com/test/ProgramRunner.java
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
+"
+" Version 1.1:
+"
+" Added two new commands:
+"
+" Rearrangetabsbytype: If it's a Java file, returns the last word that's not a part of the extension. For example, CopyAction.java returns Action and
+" CopyForm.java returns Form. This should probably be reworked to allow the setting of the extension upon which to filter or to not look at extensions at all.
+"
+" Rearrangetabsbyroot: Groups files with similarly named roots together. For example, CopyAction.java, CopyForm.java and CopyResults.jsp will end up together
+" because they all have "Copy" as the root.
+"
+" Version 1.0:
 "
 " Rearrangetabsbyfirstletter: Quick alphabetization of buffers where all buffers with the same starting letter are put together. Only the file name is
 " considered, not the path. So, at the end, you get three tabs:
@@ -48,6 +60,29 @@
 if ( !exists( "g:TabManager_maxFilesInTab" ) )
   let g:TabManager_maxFilesInTab = 5
 endif
+
+" If it's a Java file, returns the last word that's not a part of the extension. For example, CopyAction.java returns Action and CopyForm.java returns Form.
+function! GetFileType( ... )
+  let filename  = exists( "a:1" ) ? a:1 : expand( "%:t" )
+  let extension = fnamemodify( filename, ":e" )
+  let filename  = fnamemodify( filename, ":r" )
+
+  if ( extension != "java" )
+    return extension
+  endif
+
+  return substitute( filename, '\C^.*\([A-Z][^A-Z]*\)$', '\1', '' )
+endfunction
+
+" Groups files with similarly named roots together. For example, CopyAction.java, CopyForm.java and CopyResults.jsp will end up together because they all have
+" "Copy" as the root.
+function! GetFileRoot( ... )
+  let filename  = exists( "a:1" ) ? a:1 : expand( "%:t" )
+  let extension = fnamemodify( filename, ":e" )
+  let filename  = fnamemodify( filename, ":r" )
+
+  return substitute( filename, '\C^\(.*\)[A-Z][^A-Z]*$', '\1', '' )
+endfunction
 
 " Returns based on the expression, prepending a "." to be safe.
 function! s:GetFileKeyByExpression()
@@ -153,6 +188,8 @@ com! -nargs=+ Rearrangetabs silent call RearrangeTabsByExpression( <q-args> )
 com! -nargs=? Rearrangetabsbyfirstletter Rearrangetabs <args> substitute(expand('%'), '^\(.\).*', '\1', '')
 com! -nargs=? Rearrangetabsbyextension   Rearrangetabs <args> expand( "%:e" )
 com! -nargs=? Rearrangetabsbypath        Rearrangetabs <args> expand( "%:p:h" )
+com! -nargs=? Rearrangetabsbytype        Rearrangetabs <args> GetFileType()
+com! -nargs=? Rearrangetabsbyroot        Rearrangetabs <args> GetFileRoot()
 
 " Simply tiles all tabs, ignoring any particular attributes.
 com! -nargs=? Tiletabs Rearrangetabs <args> ''
