@@ -1,0 +1,73 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=3536
+
+Sorts and rearranges all open buffers across tabs based on built-in or user-specified criteria.
+
+Configuration: The variable g:TabManager_maxFilesInTab (defaults to 5) is used to determine how many buffers to open in each tab.
+
+General usage:
+
+All of these commands optionally take a number which determines how many buffers to open per tab (new tabs get created as necessary); 0 means to lump all
+buffers of any given typeinto one tab.
+
+For the following examples, assume these buffers are open (doesn't matter how many tabs they currently take):
+
+/progs/com/test/Abcd.java
+/progs/com/test/ProgramRunner.java
+/progs/com/abc/Test.java
+/vim/plugin/TabManager.vim
+
+Rearrangetabsbyfirstletter: Quick alphabetization of buffers where all buffers with the same starting letter are put together. Only the file name is
+considered, not the path. So, at the end, you get three tabs:
+
+Tab 1: Abcd.java
+Tab 2: ProgramRunner.java
+Tab 3: TabManager.vim and Test.java
+
+(The tabs are sorted as are the results within each tab.)
+
+Rearrangetabsbyextension: Arranges by extension (.java or .vim, for example):
+
+Tab 1: Abcd.java, ProgramRunner.java and Test.java
+Tab 2: TabManager.vim
+
+Rearrangetabsbypath: Arranges by absolute file path (not taking filename into consideration):
+
+Tab 1: /progs/com/abc: Test.java
+Tab 2: /progs/com/test: Abcd.java and ProgramRunner.java
+Tab 3: /vim/plugin: TabManager.vim
+
+Tiletabs: Quick way to alphabetize the list of buffers (case sensitive) into regularly-sized (by number of buffers) tabs. Doesn't make sense to use this with
+0 (all buffers in one tab), unless that's the effect you want.
+
+Rearrangetabs: The workhorse. All other other commands are defined through this. Takes the actual pattern criteria against which to match each buffer.
+
+Version 1.1:
+
+Added two new commands:
+
+Rearrangetabsbytype: If it's a Java file, returns the last word that's not a part of the extension. For example, CopyAction.java returns Action and
+CopyForm.java returns Form. This should probably be reworked to allow the setting of the extension upon which to filter or to not look at extensions at all.
+
+Rearrangetabsbyroot: Groups files with similarly named roots together. For example, CopyAction.java, CopyForm.java and CopyResults.jsp will end up together
+because they all have "Copy" as the root.
+
+Version 1.2:
+
+New variable: g:TabManager_fileTypeExtension (defaults to "java") to use when determining the Rearrangetabsbytype; can be passed to the command on the
+command-line as an override.
+
+Rearrangetabsbytype now takes an extension (other than the default "java" or g:TabManager_fileTypeExtension) to use when sorting the files. If only one
+parameter is passed, it may be either a number or the extension. If both are specified, the number must be first.
+
+Version 1.3:
+
+Rearrangetabsbyfirstletter renamed to Rearrangetabsbyfirstletters: If called with no parameters, considers the first character of the file name, as before. If
+called with one parameter, the specified number of characters is considered. For example, with no parameters, "Test.java" and "Touring.java" would be placed
+together because both start with a T. With 2 as the parameter value, they would be separated ("Te" vs. "To").
+
+If called with 2 parameters, the first parameter is the number of windows to place in one tab, as always (0 meaning to throw them all together).
+
+Version 1.35:
+
+Takes 'ignorecase' into consideration for matching extensions, first letters and complete file paths (but not for matching roots and "types").
+
