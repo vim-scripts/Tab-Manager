@@ -1,6 +1,6 @@
 " TabManager.vim: a plugin to rearrange open buffers across multiple tabs in Vim.
 " By: Salman Halim
-" Version 1.1
+" Version 1.2
 " Date: Saturday, April 02, 2011
 "
 " Sorts and rearranges all open buffers across tabs based on built-in or user-specified criteria.
@@ -18,6 +18,13 @@
 " /progs/com/test/ProgramRunner.java
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
+"
+" Version 1.2:
+"
+" New variable: g:TabManager_fileTypeExtension (defaults to "java") to use when determining the Rearrangetabsbytype; can be passed to the command on the
+" command-line as an override.
+"
+" Rearrangetabsbytype now takes an extension (other than the default "java" or g:TabManager_fileTypeExtension) to use when sorting the files.
 "
 " Version 1.1:
 "
@@ -61,13 +68,17 @@ if ( !exists( "g:TabManager_maxFilesInTab" ) )
   let g:TabManager_maxFilesInTab = 5
 endif
 
+if ( !exists( "g:TabManager_fileTypeExtension" ) )
+  let g:TabManager_fileTypeExtension = "java"
+endif
+
 " If it's a Java file, returns the last word that's not a part of the extension. For example, CopyAction.java returns Action and CopyForm.java returns Form.
 function! GetFileType( ... )
   let filename  = exists( "a:1" ) ? a:1 : expand( "%:t" )
   let extension = fnamemodify( filename, ":e" )
   let filename  = fnamemodify( filename, ":r" )
 
-  if ( extension != "java" )
+  if ( extension != g:TabManager_fileTypeExtension )
     return extension
   endif
 
@@ -123,6 +134,35 @@ function! s:CollectKeys()
   unlet g:TabManager_keyList
 
   return result
+endfunction
+
+function! s:RearrangeTabsByFileType( ... )
+  let numFiles         = g:TabManager_maxFilesInTab
+  let extensionToParse = g:TabManager_fileTypeExtension
+
+  call Decho( "a:0:  ", string( a:0 ) )
+
+  " At least two arguments; the first one is the number of files and the second is the extension.
+  if ( a:0 >= 2 )
+    let numFiles         = a:1
+    let extensionToParse = a:2
+  elseif ( a:0 == 1 )
+    if ( type( a:1 ) == 0 )
+      let numFiles = a:1
+    else
+      let extensionToParse = a:1
+    endif
+  endif
+
+  call Decho( "numFiles:  ", string( numFiles ) )
+  call Decho( "extensionToParse:  ", string( extensionToParse ) )
+
+  let savedExtension                 = g:TabManager_fileTypeExtension
+  let g:TabManager_fileTypeExtension = extensionToParse
+
+  execute 'Rearrangetabs ' . numFiles . ' GetFileType()'
+
+  let g:TabManager_fileTypeExtension = savedExtension
 endfunction
 
 " Pass it a function that can be used to generate a filtering key for the current buffer. For example, GetFileExtension returns the file extension and
@@ -188,7 +228,7 @@ com! -nargs=+ Rearrangetabs silent call RearrangeTabsByExpression( <q-args> )
 com! -nargs=? Rearrangetabsbyfirstletter Rearrangetabs <args> substitute(expand('%'), '^\(.\).*', '\1', '')
 com! -nargs=? Rearrangetabsbyextension   Rearrangetabs <args> expand( "%:e" )
 com! -nargs=? Rearrangetabsbypath        Rearrangetabs <args> expand( "%:p:h" )
-com! -nargs=? Rearrangetabsbytype        Rearrangetabs <args> GetFileType()
+com! -nargs=* Rearrangetabsbytype        call <SID>RearrangeTabsByFileType( <f-args> )
 com! -nargs=? Rearrangetabsbyroot        Rearrangetabs <args> GetFileRoot()
 
 " Simply tiles all tabs, ignoring any particular attributes.
