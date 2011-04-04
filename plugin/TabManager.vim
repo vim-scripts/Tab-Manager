@@ -19,13 +19,18 @@
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
 "
+" Version 1.35:
+" 
+" Takes 'ignorecase' into consideration for matching extensions, first letters and complete file paths (but not for matching roots and "types").
+"
 " Version 1.3:
 "
-" Rearrangetabsbyfirstletter renamed to Rearrangetabsbyfirstletters: If called with no parameters, considers the first character of the file name, as before. If
-" called with one parameter, the specified number of characters is considered. For example, with no parameters, "Test.java" and "Touring.java" would be placed
-" together because both start with a T. With 2 as the parameter value, they would be separated ("Te" vs. "To").
+" Rearrangetabsbyfirstletter renamed to Rearrangetabsbyfirstletters: If called with no parameters, considers the first character of the file name, as before.
 "
-" If called with 2 parameters, the first parameter is the number of windows to place in one tab, as always (0 meaning to throw them all together).
+" If called with one parameter, the specified number of characters is considered. For example, with no parameters, "Test.java" and "Touring.java" would be
+" placed together because both start with a T. With 2 as the parameter value, they would be separated ("Te" vs. "To").
+"
+" If called with two parameters, the first parameter is the number of windows to place in one tab, as always (0 meaning to throw them all together).
 "
 " Version 1.2:
 "
@@ -180,7 +185,7 @@ function! s:RearrangeTabsByFirstLetters( ... )
     let numLetters = a:1
   endif
 
-  execute "Rearrangetabs " . numFiles . " substitute( expand( '%' ), '^\\(.\\{" . numLetters . "}\\).*', '\\1', '' )"
+  execute "Rearrangetabs " . numFiles . " substitute( &ignorecase ? tolower( expand( '%:t' ) ) : expand( '%:t' ), '^\\(.\\{" . numLetters . "}\\).*', '\\1', '' )"
 endfunction
 
 " Pass it a function that can be used to generate a filtering key for the current buffer. For example, GetFileExtension returns the file extension and
@@ -244,8 +249,8 @@ endfunction
 com! -nargs=+ Rearrangetabs silent call RearrangeTabsByExpression( <q-args> )
 
 com! -nargs=* Rearrangetabsbyfirstletters call <SID>RearrangeTabsByFirstLetters( <f-args> )
-com! -nargs=? Rearrangetabsbyextension    Rearrangetabs <args> expand( "%:e" )
-com! -nargs=? Rearrangetabsbypath         Rearrangetabs <args> expand( "%:p:h" )
+com! -nargs=? Rearrangetabsbyextension    Rearrangetabs <args> &ignorecase ? tolower( expand( "%:e" ) ) : expand( "%:e" )
+com! -nargs=? Rearrangetabsbypath         Rearrangetabs <args> &ignorecase ? tolower( expand( "%:p:h" ) ) : expand( "%:p:h" )
 com! -nargs=* Rearrangetabsbytype         call <SID>RearrangeTabsByFileType( <f-args> )
 com! -nargs=? Rearrangetabsbyroot         Rearrangetabs <args> GetFileRoot()
 
