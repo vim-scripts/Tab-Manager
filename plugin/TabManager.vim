@@ -19,6 +19,14 @@
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
 "
+" Version 1.3:
+"
+" Rearrangetabsbyfirstletter renamed to Rearrangetabsbyfirstletters: If called with no parameters, considers the first character of the file name, as before. If
+" called with one parameter, the specified number of characters is considered. For example, with no parameters, "Test.java" and "Touring.java" would be placed
+" together because both start with a T. With 2 as the parameter value, they would be separated ("Te" vs. "To").
+"
+" If called with 2 parameters, the first parameter is the number of windows to place in one tab, as always (0 meaning to throw them all together).
+"
 " Version 1.2:
 "
 " New variable: g:TabManager_fileTypeExtension (defaults to "java") to use when determining the Rearrangetabsbytype; can be passed to the command on the
@@ -161,6 +169,20 @@ function! s:RearrangeTabsByFileType( ... )
   let g:TabManager_fileTypeExtension = savedExtension
 endfunction
 
+function! s:RearrangeTabsByFirstLetters( ... )
+  let numFiles   = g:TabManager_maxFilesInTab
+  let numLetters = 1
+
+  if ( a:0 >= 2 )
+    let numFiles = a:1
+    let numLetters = a:2
+  elseif ( a:0 == 1 )
+    let numLetters = a:1
+  endif
+
+  execute "Rearrangetabs " . numFiles . " substitute( expand( '%' ), '^\\(.\\{" . numLetters . "}\\).*', '\\1', '' )"
+endfunction
+
 " Pass it a function that can be used to generate a filtering key for the current buffer. For example, GetFileExtension returns the file extension and
 " GetFilePath returns the fully qualified file path.
 "
@@ -221,11 +243,11 @@ endfunction
 " be used. To allow as many as will fit (this doesn't actually check for a maximum but will cram them in as they come), use 0.
 com! -nargs=+ Rearrangetabs silent call RearrangeTabsByExpression( <q-args> )
 
-com! -nargs=? Rearrangetabsbyfirstletter Rearrangetabs <args> substitute(expand('%'), '^\(.\).*', '\1', '')
-com! -nargs=? Rearrangetabsbyextension   Rearrangetabs <args> expand( "%:e" )
-com! -nargs=? Rearrangetabsbypath        Rearrangetabs <args> expand( "%:p:h" )
-com! -nargs=* Rearrangetabsbytype        call <SID>RearrangeTabsByFileType( <f-args> )
-com! -nargs=? Rearrangetabsbyroot        Rearrangetabs <args> GetFileRoot()
+com! -nargs=* Rearrangetabsbyfirstletters call <SID>RearrangeTabsByFirstLetters( <f-args> )
+com! -nargs=? Rearrangetabsbyextension    Rearrangetabs <args> expand( "%:e" )
+com! -nargs=? Rearrangetabsbypath         Rearrangetabs <args> expand( "%:p:h" )
+com! -nargs=* Rearrangetabsbytype         call <SID>RearrangeTabsByFileType( <f-args> )
+com! -nargs=? Rearrangetabsbyroot         Rearrangetabs <args> GetFileRoot()
 
 " Simply tiles all tabs, ignoring any particular attributes.
 com! -nargs=? Tiletabs Rearrangetabs <args> ''
