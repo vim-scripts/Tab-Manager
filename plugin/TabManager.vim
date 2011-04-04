@@ -24,7 +24,8 @@
 " New variable: g:TabManager_fileTypeExtension (defaults to "java") to use when determining the Rearrangetabsbytype; can be passed to the command on the
 " command-line as an override.
 "
-" Rearrangetabsbytype now takes an extension (other than the default "java" or g:TabManager_fileTypeExtension) to use when sorting the files.
+" Rearrangetabsbytype now takes an extension (other than the default "java" or g:TabManager_fileTypeExtension) to use when sorting the files. If only one
+" parameter is passed, it may be either a number or the extension. If both are specified, the number must be first.
 "
 " Version 1.1:
 "
@@ -140,22 +141,17 @@ function! s:RearrangeTabsByFileType( ... )
   let numFiles         = g:TabManager_maxFilesInTab
   let extensionToParse = g:TabManager_fileTypeExtension
 
-  call Decho( "a:0:  ", string( a:0 ) )
-
   " At least two arguments; the first one is the number of files and the second is the extension.
   if ( a:0 >= 2 )
     let numFiles         = a:1
     let extensionToParse = a:2
   elseif ( a:0 == 1 )
-    if ( type( a:1 ) == 0 )
+    if ( str2nr( a:1 ) == a:1 )
       let numFiles = a:1
     else
       let extensionToParse = a:1
     endif
   endif
-
-  call Decho( "numFiles:  ", string( numFiles ) )
-  call Decho( "extensionToParse:  ", string( extensionToParse ) )
 
   let savedExtension                 = g:TabManager_fileTypeExtension
   let g:TabManager_fileTypeExtension = extensionToParse
