@@ -111,7 +111,7 @@ endfunction
 
 " Returns based on the expression, prepending a "." to be safe.
 function! s:GetFileKeyByExpression()
-  execute 'return "." . ' . g:TabManager_keyExpression
+  execute 'return ' . g:TabManager_keyExpression
 endfunction
 
 let s:expressionFunctionReference = function( "<SID>GetFileKeyByExpression" )
@@ -123,7 +123,7 @@ function! s:CloseOldTabs()
 endfunction
 
 function! s:CollectFileInformation()
-  let key = g:TabManager_keyFunction()
+  let key = '.' . g:TabManager_keyFunction()
 
   if ( !has_key( g:TabManager_keyList, key ) )
     let g:TabManager_keyList[ key ] = []
@@ -217,9 +217,11 @@ function! RearrangeTabs( keyFunction, ... )
         tabnew
 
         let t:TabManager_key = key
-      endif
 
-      execute 'sp ' . fileInformation.path
+        execute 'e ' . fileInformation.path
+      else
+        execute 'sp ' . fileInformation.path
+      endif
 
       call winrestview( fileInformation.position )
 
