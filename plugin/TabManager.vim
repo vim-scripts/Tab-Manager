@@ -20,7 +20,7 @@
 " /vim/plugin/TabManager.vim
 "
 " Version 1.35:
-" 
+"
 " Takes 'ignorecase' into consideration for matching extensions, first letters and complete file paths (but not for matching roots and "types").
 "
 " Version 1.3:
@@ -219,7 +219,7 @@ function! RearrangeTabs( keyFunction, ... )
         let t:TabManager_key = key
       endif
 
-      execute 'Sp ' . fileInformation.path
+      execute 'sp ' . fileInformation.path
 
       call winrestview( fileInformation.position )
 
