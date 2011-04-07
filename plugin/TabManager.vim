@@ -19,6 +19,16 @@
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
 "
+" Version 1.4:
+"
+" Added new command:
+"
+" Movetotab: moves the current file to the specified tab; understands absolute numbers (1 for the first tab, for example) as well as:
+"
+" - n: next tab
+" - p: previous tab
+" - $: last tab
+"
 " Version 1.35:
 "
 " Takes 'ignorecase' into consideration for matching extensions, first letters and complete file paths (but not for matching roots and "types").
@@ -122,6 +132,15 @@ function! s:CloseOldTabs()
   endif
 endfunction
 
+function! GetFileStats()
+  let fileInformation = {}
+
+  let fileInformation.path     = expand( "%:p" )
+  let fileInformation.position = winsaveview()
+
+  return fileInformation
+endfunction
+
 function! s:CollectFileInformation()
   let key = '.' . g:TabManager_keyFunction()
 
@@ -129,12 +148,7 @@ function! s:CollectFileInformation()
     let g:TabManager_keyList[ key ] = []
   endif
 
-  let fileInformation = {}
-
-  let fileInformation.path     = expand( "%:p" )
-  let fileInformation.position = winsaveview()
-
-  let g:TabManager_keyList[ key ] += [ fileInformation ]
+  let g:TabManager_keyList[ key ] += [ GetFileStats() ]
 endfunction
 
 function! s:CollectKeys()
@@ -234,6 +248,51 @@ function! RearrangeTabs( keyFunction, ... )
   tabn 1
 endfunction
 
+" Moves the current buffer to the specified tab
+function! MoveToTab( desiredTab )
+  let savedLazy = &lz
+
+  set lazyredraw
+
+  let currentTab = tabpagenr()
+  let tabNumber  = a:desiredTab
+
+  if ( tabNumber == 'n' )
+    let tabNumber = currentTab + 1
+  elseif ( tabNumber == 'p' )
+    let tabNumber = currentTab - 1
+  elseif ( tabNumber == '$' )
+    let tabNumber = tabpagenr( '$' )
+  endif
+
+  if ( currentTab == tabNumber )
+    echo "Already on tab " . tabNumber
+
+    return
+  elseif ( tabpagenr( '$' ) < tabNumber )
+    echo "No such tab."
+
+    return
+  endif
+
+  let fileInformation = GetFileStats()
+
+  execute 'tabn ' . tabNumber
+
+  execute 'sp ' . fileInformation.path
+
+  " Close current; must do this after opening it elsewhere in case it's been modified.
+  execute 'tabn ' . currentTab
+  execute 'q'
+
+  execute 'tabn ' . tabNumber
+
+  execute savedLazy
+
+  " Have to do this last.
+  call winrestview( fileInformation.position )
+endfunction
+
 let s:argumentParsingExpression = '^\%(\(\d\+\)\s\+\)\?\(.*\)$'
 
 function! RearrangeTabsByExpression( arg )
@@ -258,3 +317,5 @@ com! -nargs=? Rearrangetabsbyroot         Rearrangetabs <args> GetFileRoot()
 
 " Simply tiles all tabs, ignoring any particular attributes.
 com! -nargs=? Tiletabs Rearrangetabs <args> ''
+
+com! -nargs=1 Movetotab call MoveToTab( <q-args> )

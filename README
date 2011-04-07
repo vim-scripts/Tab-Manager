@@ -71,3 +71,19 @@ Version 1.35:
 
 Takes 'ignorecase' into consideration for matching extensions, first letters and complete file paths (but not for matching roots and "types").
 
+Version 1.4:
+
+Added new command:
+
+Movetotab: moves the current file to the specified tab; understands absolute numbers (1 for the first tab, for example) as well as:
+
+- n: next tab
+- p: previous tab
+- $: last tab
+
+Version 1.45:
+
+Added new command:
+
+Copytotab: copies the current file to the specified tab (just like Movetotab except that the original tab also contains the file).
+
