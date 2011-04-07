@@ -10,7 +10,7 @@
 " General usage:
 "
 " All of these commands optionally take a number which determines how many buffers to open per tab (new tabs get created as necessary); 0 means to lump all
-" buffers of any given typeinto one tab.
+" buffers of any given type into one tab.
 "
 " For the following examples, assume these buffers are open (doesn't matter how many tabs they currently take):
 "
@@ -18,6 +18,12 @@
 " /progs/com/test/ProgramRunner.java
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
+"
+" Version 1.45:
+"
+" Added new command:
+"
+" Copytotab: copies the current file to the specified tab (just like Movetotab except that the original tab also contains the file).
 "
 " Version 1.4:
 "
@@ -248,8 +254,9 @@ function! RearrangeTabs( keyFunction, ... )
   tabn 1
 endfunction
 
-" Moves the current buffer to the specified tab
-function! MoveToTab( desiredTab )
+" Moves the current buffer to the specified tab; if a second parameter is specified and is 1, the behaviour is that of a copy (the current buffer isn't closed
+" but another copy is created).
+function! MoveToTab( desiredTab, ... )
   let savedLazy = &lz
 
   set lazyredraw
@@ -282,10 +289,12 @@ function! MoveToTab( desiredTab )
   execute 'sp ' . fileInformation.path
 
   " Close current; must do this after opening it elsewhere in case it's been modified.
-  execute 'tabn ' . currentTab
-  execute 'q'
+  if ( !exists( "a:1" ) || a:1 != "1" )
+    execute 'tabn ' . currentTab
+    execute 'q'
 
-  execute 'tabn ' . tabNumber
+    execute 'tabn ' . tabNumber
+  endif
 
   execute savedLazy
 
@@ -319,3 +328,4 @@ com! -nargs=? Rearrangetabsbyroot         Rearrangetabs <args> GetFileRoot()
 com! -nargs=? Tiletabs Rearrangetabs <args> ''
 
 com! -nargs=1 Movetotab call MoveToTab( <q-args> )
+com! -nargs=1 Copytotab call MoveToTab( <q-args>, 1 )
