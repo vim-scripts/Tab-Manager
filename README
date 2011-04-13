@@ -87,3 +87,42 @@ Added new command:
 
 Copytotab: copies the current file to the specified tab (just like Movetotab except that the original tab also contains the file).
 
+Version 1.5:
+
+Added the ability to set custom "keys" to be used when rearranging files into tabs. For example, given the following list of files:
+
+/progs/com/test/Abcd.java
+/progs/com/test/ProgramRunner.java
+/progs/com/abc/Test.java
+/vim/plugin/TabManager.vim
+/webFiles/root/test.html
+/webFiles/root/css/styles.css
+
+The default behaviour, when arranging by path, extension or first letters, is to always place test.html and styles.css in separate tabs. (Unless calling
+Tiletabs, which just tiles all windows blindly.) However, if both these files have a manually set key of, say, "web", then any other criteria will be ignored
+and these two files will always be placed together because they have the same key. This allows grouping some windows by functionality while continuing to
+group others by whatever rearrange command is actually called.
+
+Of course, different sets of windows may have different keys and they will all be grouped together accordingly.
+
+All of the standard Rearrange* commands now take an optional bang (!)--for example, Rearrangetabsbyextension!--that will, for just this rearrangement, IGNORE
+any local keys and treat all windows as if there were no keys.
+
+If you have multiple windows where you're editing the same buffer, they will almost always end up together after any rearrangement (unless they are split
+across tabs that become full). You can avoid this by setting different window-level local keys for the buffers.
+
+Added four new commands--the set and remove key commands can be combined with windo and tabdo to set or remove the same key for more than one window at a time:
+
+Settabmanagerwindowkey <key>: Sets the window-level local key for the current window to <key>.
+
+Settabmanagerbufferkey <key>: Sets the buffer-level local key for the current buffer to <key>.
+
+Removetabmanagerkey: Removes the currently set key for the current window; will remove BOTH buffer and window level keys. (Doesn't take any arguments.)
+
+Redorearrangetabs: Redoes the last tab rearrangement command (by extension, simple tiling, by first letters, etc.). Useful for incorporating new windows into
+the currenty "scheme". If local keys have changed, the layout may end up being different. If new windows have been added, the layout may be different, also,
+but that may be what you want. By default, it obeys local keys (even if the last command was called with a bang and did not). Accepts a bang (!) to ignore
+local keys.
+
+If you call this before you've run any actual rearrangement commands, you will most likely (deservedly) get an error.
+

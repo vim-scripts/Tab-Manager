@@ -1,7 +1,5 @@
 " TabManager.vim: a plugin to rearrange open buffers across multiple tabs in Vim.
 " By: Salman Halim
-" Version 1.2
-" Date: Saturday, April 02, 2011
 "
 " Sorts and rearranges all open buffers across tabs based on built-in or user-specified criteria.
 "
@@ -18,6 +16,45 @@
 " /progs/com/test/ProgramRunner.java
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
+"
+" Version 1.5:
+"
+" Added the ability to set custom "keys" to be used when rearranging files into tabs. For example, given the following list of files:
+
+" /progs/com/test/Abcd.java
+" /progs/com/test/ProgramRunner.java
+" /progs/com/abc/Test.java
+" /vim/plugin/TabManager.vim
+" /webFiles/root/test.html
+" /webFiles/root/css/styles.css
+"
+" The default behaviour, when arranging by path, extension or first letters, is to always place test.html and styles.css in separate tabs. (Unless calling
+" Tiletabs, which just tiles all windows blindly.) However, if both these files have a manually set key of, say, "web", then any other criteria will be ignored
+" and these two files will always be placed together because they have the same key. This allows grouping some windows by functionality while continuing to
+" group others by whatever rearrange command is actually called.
+"
+" Of course, different sets of windows may have different keys and they will all be grouped together accordingly.
+"
+" All of the standard Rearrange* commands now take an optional bang (!)--for example, Rearrangetabsbyextension!--that will, for just this rearrangement, IGNORE
+" any local keys and treat all windows as if there were no keys.
+"
+" If you have multiple windows where you're editing the same buffer, they will almost always end up together after any rearrangement (unless they are split
+" across tabs that become full). You can avoid this by setting different window-level local keys for the buffers.
+"
+" Added four new commands--the set and remove key commands can be combined with windo and tabdo to set or remove the same key for more than one window at a time:
+"
+" Settabmanagerwindowkey <key>: Sets the window-level local key for the current window to <key>.
+"
+" Settabmanagerbufferkey <key>: Sets the buffer-level local key for the current buffer to <key>.
+"
+" Removetabmanagerkey: Removes the currently set key for the current window; will remove BOTH buffer and window level keys. (Doesn't take any arguments.)
+"
+" Redorearrangetabs: Redoes the last tab rearrangement command (by extension, simple tiling, by first letters, etc.). Useful for incorporating new windows into
+" the currenty "scheme". If local keys have changed, the layout may end up being different. If new windows have been added, the layout may be different, also,
+" but that may be what you want. By default, it obeys local keys (even if the last command was called with a bang and did not). Accepts a bang (!) to ignore
+" local keys.
+"
+" If you call this before you've run any actual rearrangement commands, you will most likely (deservedly) get an error.
 "
 " Version 1.45:
 "
@@ -141,14 +178,25 @@ endfunction
 function! GetFileStats()
   let fileInformation = {}
 
-  let fileInformation.path     = expand( "%:p" )
-  let fileInformation.position = winsaveview()
+  let fileInformation.path      = expand( "%:p" )
+  let fileInformation.position  = winsaveview()
+
+  " If the window key exists, save it so we can restore it.
+  if ( exists( "w:TabManager_localKey" ) )
+    let fileInformation.windowKey = w:TabManager_localKey
+  endif
 
   return fileInformation
 endfunction
 
 function! s:CollectFileInformation()
-  let key = '.' . g:TabManager_keyFunction()
+  let key = '.'
+
+  if ( g:TabManager_bang )
+    let key .= g:TabManager_keyFunction()
+  else
+    let key .= GetVar( 'TabManager_localKey', g:TabManager_keyFunction() )
+  endif
 
   if ( !has_key( g:TabManager_keyList, key ) )
     let g:TabManager_keyList[ key ] = []
@@ -170,7 +218,7 @@ function! s:CollectKeys()
   return result
 endfunction
 
-function! s:RearrangeTabsByFileType( ... )
+function! s:RearrangeTabsByFileType( bang, ... )
   let numFiles         = g:TabManager_maxFilesInTab
   let extensionToParse = g:TabManager_fileTypeExtension
 
@@ -189,12 +237,12 @@ function! s:RearrangeTabsByFileType( ... )
   let savedExtension                 = g:TabManager_fileTypeExtension
   let g:TabManager_fileTypeExtension = extensionToParse
 
-  execute 'Rearrangetabs ' . numFiles . ' GetFileType()'
+  execute 'Rearrangetabs' . a:bang . ' ' . numFiles . ' GetFileType()'
 
   let g:TabManager_fileTypeExtension = savedExtension
 endfunction
 
-function! s:RearrangeTabsByFirstLetters( ... )
+function! s:RearrangeTabsByFirstLetters( bang, ... )
   let numFiles   = g:TabManager_maxFilesInTab
   let numLetters = 1
 
@@ -205,7 +253,7 @@ function! s:RearrangeTabsByFirstLetters( ... )
     let numLetters = a:1
   endif
 
-  execute "Rearrangetabs " . numFiles . " substitute( &ignorecase ? tolower( expand( '%:t' ) ) : expand( '%:t' ), '^\\(.\\{" . numLetters . "}\\).*', '\\1', '' )"
+  execute "Rearrangetabs" . a:bang. " " . numFiles . " substitute( &ignorecase ? tolower( expand( '%:t' ) ) : expand( '%:t' ), '^\\(.\\{" . numLetters . "}\\).*', '\\1', '' )"
 endfunction
 
 " Pass it a function that can be used to generate a filtering key for the current buffer. For example, GetFileExtension returns the file extension and
@@ -244,6 +292,11 @@ function! RearrangeTabs( keyFunction, ... )
       endif
 
       call winrestview( fileInformation.position )
+
+      " Restore the local window key--creating a new window and moving a buffer over destroys it.
+      if ( has_key( fileInformation, 'windowKey' ) )
+        let w:TabManager_localKey = fileInformation.windowKey
+      endif
 
       let numFiles += 1
     endfor
@@ -304,28 +357,36 @@ endfunction
 
 let s:argumentParsingExpression = '^\%(\(\d\+\)\s\+\)\?\(.*\)$'
 
-function! RearrangeTabsByExpression( arg )
+function! RearrangeTabsByExpression( bang, arg )
   let parsedList = matchlist( a:arg, s:argumentParsingExpression )
 
-  let numFiles                   = parsedList[ 1 ] == "" ? g:TabManager_maxFilesInTab : parsedList[ 1 ]
+  let g:TabManager_numFiles      = parsedList[ 1 ] == "" ? g:TabManager_maxFilesInTab : parsedList[ 1 ]
   let g:TabManager_keyExpression = parsedList[ 2 ]
+  let g:TabManager_bang          = a:bang == '!'
 
-  call RearrangeTabs( s:expressionFunctionReference, numFiles )
+  call RearrangeTabs( s:expressionFunctionReference, g:TabManager_numFiles )
 endfunction
 
 " Allows the passing in of an expression that, when evaluated (by passing to :execute 'return "." ' . <expression>), returns a string based on the current
 " buffer's parameters. The first--optional--parameter is the number of files to create per tab. Leaving it out causes the value in g:TabManager_maxFilesInTab to
 " be used. To allow as many as will fit (this doesn't actually check for a maximum but will cram them in as they come), use 0.
-com! -nargs=+ Rearrangetabs silent call RearrangeTabsByExpression( <q-args> )
+com! -nargs=+ -bang Rearrangetabs silent call RearrangeTabsByExpression( <q-bang>, <q-args> )
 
-com! -nargs=* Rearrangetabsbyfirstletters call <SID>RearrangeTabsByFirstLetters( <f-args> )
-com! -nargs=? Rearrangetabsbyextension    Rearrangetabs <args> &ignorecase ? tolower( expand( "%:e" ) ) : expand( "%:e" )
-com! -nargs=? Rearrangetabsbypath         Rearrangetabs <args> &ignorecase ? tolower( expand( "%:p:h" ) ) : expand( "%:p:h" )
-com! -nargs=* Rearrangetabsbytype         call <SID>RearrangeTabsByFileType( <f-args> )
-com! -nargs=? Rearrangetabsbyroot         Rearrangetabs <args> GetFileRoot()
+com! -nargs=* -bang Rearrangetabsbyfirstletters call <SID>RearrangeTabsByFirstLetters( <q-bang>, <f-args> )
+com! -nargs=? -bang Rearrangetabsbyextension    Rearrangetabs<bang> <args> &ignorecase ? tolower( expand( "%:e" ) ) : expand( "%:e" )
+com! -nargs=? -bang Rearrangetabsbypath         Rearrangetabs<bang> <args> &ignorecase ? tolower( expand( "%:p:h" ) ) : expand( "%:p:h" )
+com! -nargs=* -bang Rearrangetabsbytype         call <SID>RearrangeTabsByFileType( <q-bang>, <f-args> )
+com! -nargs=? -bang Rearrangetabsbyroot         Rearrangetabs<bang> <args> GetFileRoot()
 
-" Simply tiles all tabs, ignoring any particular attributes.
-com! -nargs=? Tiletabs Rearrangetabs <args> ''
+com! -nargs=1 Settabmanagerwindowkey let w:TabManager_localKey = "<args>"
+com! -nargs=1 Settabmanagerbufferkey let b:TabManager_localKey = "<args>"
+com! Removetabmanagerkey silent! unlet w:TabManager_localKey b:TabManager_localKey
+
+" Redoes the last rearrange command.
+com! -bang Redorearrangetabs execute 'Rearrangetabs<bang> ' . g:TabManager_numFiles . ' ' . g:TabManager_keyExpression
+
+" Simply tiles all tabs, ignoring any particular attributes; call with a bang (!) to ignore local keys, also.
+com! -nargs=? -bang Tiletabs Rearrangetabs<bang> <args> ''
 
 com! -nargs=1 Movetotab call MoveToTab( <q-args> )
 com! -nargs=1 Copytotab call MoveToTab( <q-args>, 1 )
