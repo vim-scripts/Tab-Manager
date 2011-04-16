@@ -17,6 +17,23 @@
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
 "
+" Version 1.55:
+"
+" Rearrangetabsbypath now also takes a second parameter which determines how many components from the path to consider. For example, given the following set of
+" files:
+"
+" /progs/com/test/Abcd.java
+" /progs/com/test/ProgramRunner.java
+" /progs/com/abc/Test.java
+"
+" The default behaviour would be to create two tabs, one with Abcd.java and ProgramRunner.java; and the other with Test.java. However, if called with a
+" parameter of 2, it will only consider the first two path components (/progs/com) and put all the files in the same tab. A value of 0 (the default) means to
+" check the entire path, as before. New command format:
+"
+" Rearrangetabsbypath [number of files per tab] [number of path components to consider]
+" Or
+" Rearrangetabsbypath [number of path components to consider]
+"
 " Version 1.5:
 "
 " Added the ability to set custom "keys" to be used when rearranging files into tabs. For example, given the following list of files:
@@ -218,6 +235,32 @@ function! s:CollectKeys()
   return result
 endfunction
 
+function! GetFilePath( numPathComponents )
+  let path = &ignorecase ? tolower( expand( "%:p:h" ) ) : expand( "%:p:h" )
+  let path = substitute( path, '\', '/', 'g' )
+
+  if ( a:numPathComponents == 0 )
+    return path
+  else
+    return substitute( path =~ '/$' ? path : path . '/', '^\(\%([^\/]*\/\)\{,' . a:numPathComponents . '}\).*', '\1', '' )
+  endif
+endfunction
+
+function! s:RearrangeTabsByPath( bang, ... )
+  let numFiles          = g:TabManager_maxFilesInTab
+  let numPathComponents = 0
+
+  " At least two arguments; the first one is the number of files and the second is the maximum number of path components to consider.
+  if ( a:0 >= 2 )
+    let numFiles          = a:1
+    let numPathComponents = a:2
+  elseif ( a:0 == 1 )
+    let numPathComponents = a:1
+  endif
+
+  execute 'Rearrangetabs' . a:bang . ' ' . numFiles . ' GetFilePath( ' . numPathComponents . ' )'
+endfunction
+
 function! s:RearrangeTabsByFileType( bang, ... )
   let numFiles         = g:TabManager_maxFilesInTab
   let extensionToParse = g:TabManager_fileTypeExtension
@@ -374,7 +417,7 @@ com! -nargs=+ -bang Rearrangetabs silent call RearrangeTabsByExpression( <q-bang
 
 com! -nargs=* -bang Rearrangetabsbyfirstletters call <SID>RearrangeTabsByFirstLetters( <q-bang>, <f-args> )
 com! -nargs=? -bang Rearrangetabsbyextension    Rearrangetabs<bang> <args> &ignorecase ? tolower( expand( "%:e" ) ) : expand( "%:e" )
-com! -nargs=? -bang Rearrangetabsbypath         Rearrangetabs<bang> <args> &ignorecase ? tolower( expand( "%:p:h" ) ) : expand( "%:p:h" )
+com! -nargs=* -bang Rearrangetabsbypath         call <SID>RearrangeTabsByPath( <q-bang>, <f-args> )
 com! -nargs=* -bang Rearrangetabsbytype         call <SID>RearrangeTabsByFileType( <q-bang>, <f-args> )
 com! -nargs=? -bang Rearrangetabsbyroot         Rearrangetabs<bang> <args> GetFileRoot()
 

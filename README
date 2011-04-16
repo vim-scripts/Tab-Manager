@@ -126,3 +126,20 @@ local keys.
 
 If you call this before you've run any actual rearrangement commands, you will most likely (deservedly) get an error.
 
+Version 1.55:
+
+Rearrangetabsbypath now also takes a second parameter which determines how many components from the path to consider. For example, given the following set of
+files:
+
+/progs/com/test/Abcd.java
+/progs/com/test/ProgramRunner.java
+/progs/com/abc/Test.java
+
+The default behaviour would be to create two tabs, one with Abcd.java and ProgramRunner.java; and the other with Test.java. However, if called with a
+parameter of 2, it will only consider the first two path components (/progs/com) and put all the files in the same tab. A value of 0 (the default) means to
+check the entire path, as before. New command format:
+
+Rearrangetabsbypath [number of files per tab] [number of path components to consider]
+Or
+Rearrangetabsbypath [number of path components to consider]
+
