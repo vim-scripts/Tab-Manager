@@ -17,6 +17,24 @@
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
 "
+" Version 1.6:
+"
+" Added a new command:
+"
+" Rearrangetabsbypackage: Works just like Rearrangetabsbypath, except uses the package the files are in. Only useful for files that specify a package in this
+" format:
+"
+" package some.package.name;
+"
+" (The semicolon is optional.) Files that don't have a package will fall back to the entire file path (no path component specification; the ENTIRE path will be
+" considered.)
+"
+" Takes either one or two arguments:
+
+" Rearrangetabsbypackage [number of files per tab] [number of path components to consider]
+" Or
+" Rearrangetabsbypackage [number of path components to consider]
+"
 " Version 1.55:
 "
 " Rearrangetabsbypath now also takes a second parameter which determines how many components from the path to consider. For example, given the following set of
@@ -246,6 +264,23 @@ function! GetFilePath( numPathComponents )
   endif
 endfunction
 
+function! GetFilePackage( numPackageComponents )
+  let packagePattern = '^\s*package\s\+\([^[:space:];]\+\);\=\s*$'
+  let theLine        = search( packagePattern, 'nw' )
+
+  " No package line; get the entire file path instead.
+  if ( theLine == 0 )
+    return GetFilePath( 0 )
+  endif
+  let package = substitute( getline( theLine ), packagePattern, '\1', '' )
+
+  if ( a:numPackageComponents == 0 )
+    return package
+  else
+    return substitute( package . '.', '^\(\%([^\.]*\.\)\{,' . a:numPackageComponents . '}\).*', '\1', '' )
+  endif
+endfunction
+
 function! s:RearrangeTabsByPath( bang, ... )
   let numFiles          = g:TabManager_maxFilesInTab
   let numPathComponents = 0
@@ -259,6 +294,21 @@ function! s:RearrangeTabsByPath( bang, ... )
   endif
 
   execute 'Rearrangetabs' . a:bang . ' ' . numFiles . ' GetFilePath( ' . numPathComponents . ' )'
+endfunction
+
+function! s:RearrangeTabsByPackage( bang, ... )
+  let numFiles             = g:TabManager_maxFilesInTab
+  let numPackageComponents = 0
+
+  " At least two arguments; the first one is the number of files and the second is the maximum number of package components to consider.
+  if ( a:0 >= 2 )
+    let numFiles             = a:1
+    let numPackageComponents = a:2
+  elseif ( a:0 == 1 )
+    let numPackageComponents = a:1
+  endif
+
+  execute 'Rearrangetabs' . a:bang . ' ' . numFiles . ' GetFilePackage( ' . numPackageComponents . ' )'
 endfunction
 
 function! s:RearrangeTabsByFileType( bang, ... )
@@ -420,6 +470,7 @@ com! -nargs=? -bang Rearrangetabsbyextension    Rearrangetabs<bang> <args> &igno
 com! -nargs=* -bang Rearrangetabsbypath         call <SID>RearrangeTabsByPath( <q-bang>, <f-args> )
 com! -nargs=* -bang Rearrangetabsbytype         call <SID>RearrangeTabsByFileType( <q-bang>, <f-args> )
 com! -nargs=? -bang Rearrangetabsbyroot         Rearrangetabs<bang> <args> GetFileRoot()
+com! -nargs=* -bang Rearrangetabsbypackage      call <SID>RearrangeTabsByPackage( <q-bang>, <f-args> )
 
 com! -nargs=1 Settabmanagerwindowkey let w:TabManager_localKey = "<args>"
 com! -nargs=1 Settabmanagerbufferkey let b:TabManager_localKey = "<args>"

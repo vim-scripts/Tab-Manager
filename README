@@ -143,3 +143,20 @@ Rearrangetabsbypath [number of files per tab] [number of path components to cons
 Or
 Rearrangetabsbypath [number of path components to consider]
 
+
+Version 1.6
+
+Added a new command:
+
+Rearrangetabsbypackage: Works just like Rearrangetabsbypath, except uses the package the files are in. Only useful for files that specify a package in this format:
+
+package some.package.name;
+
+(The semicolon is optional.) Files that don't have a package will fall back to the entire file path (no path component specification; the ENTIRE path will be considered.)
+
+Takes either one or two arguments:
+
+Rearrangetabsbypackage [number of files per tab] [number of path components to consider]
+Or
+Rearrangetabsbypackage [number of path components to consider]
+
