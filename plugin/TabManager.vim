@@ -17,6 +17,10 @@
 " /progs/com/abc/Test.java
 " /vim/plugin/TabManager.vim
 "
+" Version 1.7:
+"
+" No real change; has a dependency upon GetVar which I had forgotten to mention before.
+"
 " Version 1.6:
 "
 " Added a new command:
@@ -165,6 +169,11 @@
 "
 " Rearrangetabs: The workhorse. All other other commands are defined through this. Takes the actual pattern criteria against which to match each buffer.
 
+if ( exists( "g:TabManager_loaded" || &compatible || version < 700 ) )
+  finish
+endif
+
+let g:TabManager_loaded = 1
 
 if ( !exists( "g:TabManager_maxFilesInTab" ) )
   let g:TabManager_maxFilesInTab = 5
@@ -230,7 +239,7 @@ function! s:CollectFileInformation()
   if ( g:TabManager_bang )
     let key .= g:TabManager_keyFunction()
   else
-    let key .= GetVar( 'TabManager_localKey', g:TabManager_keyFunction() )
+    let key .= GetVar#GetVar( 'TabManager_localKey', g:TabManager_keyFunction() )
   endif
 
   if ( !has_key( g:TabManager_keyList, key ) )
