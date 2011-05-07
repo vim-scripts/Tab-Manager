@@ -89,7 +89,7 @@
 " Removetabmanagerkey: Removes the currently set key for the current window; will remove BOTH buffer and window level keys. (Doesn't take any arguments.)
 "
 " Redorearrangetabs: Redoes the last tab rearrangement command (by extension, simple tiling, by first letters, etc.). Useful for incorporating new windows into
-" the currenty "scheme". If local keys have changed, the layout may end up being different. If new windows have been added, the layout may be different, also,
+" the current "scheme". If local keys have changed, the layout may end up being different. If new windows have been added, the layout may be different, also,
 " but that may be what you want. By default, it obeys local keys (even if the last command was called with a bang and did not). Accepts a bang (!) to ignore
 " local keys.
 "

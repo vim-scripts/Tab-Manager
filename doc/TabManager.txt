@@ -1,0 +1,188 @@
+*TabManager.txt*             For Vim Version 7.3      Last change: 2011 May 06
+
+TABLE OF CONTENTS                                             *TabManager_toc*
+
+  1. Purpose                                              |TabManager_Purpose|
+  2. Usage                                                  |TabManager_Usage|
+  3. Dependencies                                    |TabManager_Dependencies|
+  4. Options                                              |TabManager_Options|
+  5. Commands                                            |TabManager_Commands|
+    5.1. Main Commands                               |TabManager_MainCommands|
+    5.2. Tile Tab Commands                        |TabManager_TileTabCommands|
+    5.3. Tile Key Commands                        |TabManager_TileKeyCommands|
+    5.4. Window Manipulation Commands  |TabManager_WindowManipulationCommands|
+  6. Notes                                                  |TabManager_Notes|
+
+
+PURPOSE                                                   *TabManager_Purpose*
+
+Sorts and rearranges all open buffers across tabs based on built-in or
+user-specified criteria.
+
+
+USAGE                                                       *TabManager_Usage*
+
+Execute any of the Rearrange* commands to rearrange the open windows in tabs,
+up to |g:TabManager_maxFilesInTab| windows per tab (by default). See
+|TabManager_Commands| for more information.
+
+Windows or buffers may be grouped together manually by setting window or
+buffer keys, in which case the Rearrange* commands will ignore their own
+settings and, instead, group all windows or buffers with the same keys
+together. All the commands accept a bang (!) Which causes them to ignore the
+local keys for just that execution. Refer to |TabManager_TileKeyCommands| for
+details on local keys.
+
+Also, most commands take an optional number which overrides the maximum number of
+windows to place in each tab (defaulting to |g:TabManager_maxFilesInTab|).
+
+
+DEPENDENCIES                                         *TabManager_Dependencies*
+
+Depends upon my GetVar.vim plugin for the window or buffer-based local keys.
+
+
+OPTIONS                                                   *TabManager_Options*
+
+                                                  *g:TabManager_maxFilesInTab*
+Defaults to 5: used to determine how many buffers to open in each tab; set it
+to 0 to open all windows that qualify in one tab.
+
+                                              *g:TabManager_fileTypeExtension*
+Defaults to "java": used when determining the keys for |Rearrangetabsbytype|
+(can be passed to the command on the command-line as an override).
+
+
+COMMANDS                                                 *TabManager_Commands*
+
+  Main Commands                                      *TabManager_MainCommands*
+
+  Most of the commands take two parameters, both optional, and are typically
+  of this format: >
+        RearrangeCommandName [max number of windows per tab] [argument specific to the command]
+<
+  And: >
+        RearrangeCommandName [argument specific to the command]
+<
+  So, with just one argument, it's a specialized argument tailored to the
+  command; with two, the first one is a one-time override for
+  |g:TabManager_maxFilesInTab|.
+
+  For the examples of the rearrangement commands that follow, assume the
+  following buffers are open: >
+        /progs/com/test/Abcd.java
+        /progs/com/test/ProgramRunner.java
+        /progs/com/abc/Test.java
+        /vim/plugin/TabManager.vim
+<
+
+                                                 *Rearrangetabsbyfirstletters*
+  Quick alphabetization of buffers where all buffers with the same starting
+  letters (just the first by default) are put together. Only the file name is
+  considered, not the path. So, at the end, you get three tabs: >
+        Tab 1: Abcd.java
+        Tab 2: ProgramRunner.java
+        Tab 3: TabManager.vim and Test.java
+<
+  The command takes up to two numerical arguments. With no parameters, only
+  the first character of the file name is considered, as above. With one
+  parameter, the specified number of character is considered instead. With two
+  parameters, the first parameter is the number of windows to place in one tab
+  and the second is the number of letters.
+
+                                                    *Rearrangetabsbyextension*
+  Considers only the file extension, placing, for example, all ".java" files
+  and all ".html" classes together.
+
+                                                         *Rearrangetabsbypath*
+  Takes the path into consideration, ignoring the filename altogether. By
+  default, considers the entire path; with one parameter, takes the specified
+  number of directory path components into consideration. With two, the first
+  one is the number of windows to place in each tab.
+
+                                                         *Rearrangetabsbytype*
+  Looks at the last word of the filename as the key. For example,
+  "TestAction.java" and "LoginAction.java" both render as "Action". It does so
+  only for files with a specific extension (|g:TabManager_fileTypeExtension|
+  by default) which can be passed in on the command-line.
+
+                                                         *Rearrangetabsbyroot*
+  Looks at the first word of the filename as the key. For example,
+  "CopyAction.java" and "CopyForm.java" both resolve to "Copy".
+
+                                                      *Rearrangetabsbypackage*
+  Works just like |Rearrangetabsbypath|, except uses the package the files are
+  in. Only useful for files that specify a package in this format: >
+        package some.package.name;
+<
+  The semicolon is optional.
+
+  Files that don't have a package will fall back to the entire file path (no
+  path component specification; the ENTIRE path will be considered.)
+
+
+  Tile Tab Commands                               *TabManager_TileTabCommands*
+
+                                                                    *Tiletabs*
+  Quick way to alphabetize the list of buffers (case sensitive) into
+  regularly-sized (by number of buffers) tabs. Doesn't make sense to use this
+  with 0 (all buffers in one tab), unless that's the effect you want.
+
+                                                           *Redorearrangetabs*
+  Redoes the last tab rearrangement command (by extension, simple tiling, by
+  first letters, etc.). Useful for incorporating new windows into the current
+  "scheme". If local keys have changed, the layout may end up being different.
+  If new windows have been added, the layout may be different, also, but that
+  may be what you want. By default, it obeys local keys (even if the last
+  command was called with a bang and did not).
+
+  Accepts a bang (!) to ignore local keys.
+
+
+  Tile Key Commands                               *TabManager_TileKeyCommands*
+
+  All windows with the same window- or buffer-specific local key are placed
+  together. This allows files that share functionality to be placed together,
+  regardless of the arrangement scheme used (unless overridden with a bang).
+
+                                                      *Settabmanagerwindowkey*
+  Adds a window-specific local key. Might be useful if more than one copy of a
+  buffer is open to place them in different tabs. >
+        Settabmanagerwindowkey the key
+<
+
+                                                      *Settabmanagerbufferkey*
+  Adds a buffer-specific local key. >
+        Settabmanagerbufferkey the key
+<
+
+                                                         *Removetabmanagerkey*
+  Removes the currently set key for the current window; will remove BOTH
+  buffer and window level keys. (Doesn't take any arguments.)
+
+
+  Window Manipulation Commands         *TabManager_WindowManipulationCommands*
+
+                                                                   *Movetotab*
+  Moves the current window from the current tab to the specified tab. Takes
+  one argument: the tab number to which to move; special values:
+
+                            Tab "number"  Meaning
+                            ------------  ------------
+                                 1        First tab
+                                 n        Next tab
+                                 p        Previous tab
+                                 $        Last tab
+
+                                                                   *Copytotab*
+  Same as |Movetotab|, except that the original tab retains the window, also.
+
+
+
+NOTES                                                       *TabManager_Notes*
+
+All tab rearrangement commands alphabetize the keys and, within each tab, the
+windows by filename.
+
+
+ vim:tw=78:ts=8:ft=help:norl:sw=8:et
